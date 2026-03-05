@@ -1,0 +1,12 @@
+# Research Agent — Dependencies
+
+# Gemini SDK
+google-genai
+
+# GitHub API + HTTP requests
+requests
+
+# Load .env file
+python-dotenv
+
+jinja2

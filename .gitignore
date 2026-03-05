@@ -1,0 +1,15 @@
+# Environment — KHÔNG bao giờ commit file này
+.env
+
+# Session data
+workspace/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+venv/
+.venv/
+env/
