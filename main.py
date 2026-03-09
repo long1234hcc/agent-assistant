@@ -20,6 +20,18 @@ session = Session(session_id="default")
 
 history = History(max_length=50)
 
+## Add sesions to history for better context management
+all_sessions = session.load()
+
+if all_sessions:
+    for entry in all_sessions:
+        first   = all_sessions[:1]
+        recent  = all_sessions[-3:]
+        past    = first + recent
+        for entry in past:
+            history.add(entry["user_input"], role="user")
+            history.add(entry["answer"],role="model")
+
 builder = PromptBuilder()
 
 llm = GenAIModel(

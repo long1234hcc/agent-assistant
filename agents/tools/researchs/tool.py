@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
-print(
-    f"[DEBUG] GITHUB_TOKEN: {repr(GITHUB_TOKEN[:20] if GITHUB_TOKEN else None)}")
+# print(
+    # f"[DEBUG] GITHUB_TOKEN: {repr(GITHUB_TOKEN[:20] if GITHUB_TOKEN else None)}")
 
 
 HEADERS = {
