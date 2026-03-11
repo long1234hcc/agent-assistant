@@ -5,6 +5,7 @@ from agents.models.base import BaseLLM
 from agents.mcp.registry import Registry
 from agents.core.parser import parse
 from google.genai import types
+import time
 
 
 class Agent:
@@ -18,12 +19,12 @@ class Agent:
         prompt_params: dict = None,
         enable_reflection: bool = True,
     ):
-        self.session           = session
-        self.history           = history
-        self.prompt_builder    = prompt_builder
-        self.llm               = llm
-        self.tools_registry    = tools_registry
-        self.prompt_params     = prompt_params or {}
+        self.session = session
+        self.history = history
+        self.prompt_builder = prompt_builder
+        self.llm = llm
+        self.tools_registry = tools_registry
+        self.prompt_params = prompt_params or {}
         self.enable_reflection = enable_reflection
 
     # ── Self Reflection ───────────────────────────────────────────────────────
@@ -68,17 +69,21 @@ Reply GOOD or NEEDS: <reason about relevance/structure only>"""
 
     def run(self, user_input: str):
 
-        system_prompt = self.prompt_builder.build_system_prompt(**self.prompt_params)
+        system_prompt = self.prompt_builder.build_system_prompt(
+            **self.prompt_params)
         self.history.add(user_input, role="user")
 
         max_iterations = 7
-        iteration      = 0
-        tools_used     = []
-        reflected      = False  # ← flag: chỉ reflect 1 lần duy nhất
+        iteration = 0
+        tools_used = []
+        reflected = False  # ← flag: chỉ reflect 1 lần duy nhất
 
         while iteration < max_iterations:
             iteration += 1
             print(f"\n[Iteration {iteration}] Calling LLM...")
+            # Debug
+            # ← thêm dòng này
+            print(f"[Debug] History: {self.history.get_history()}")
 
             tools = list(self.tools_registry.all().values())
             print(f"[Agent] Tools being passed: {[t.__name__ for t in tools]}")
@@ -89,6 +94,7 @@ Reply GOOD or NEEDS: <reason about relevance/structure only>"""
                 tools=tools
             )
             print(f"[Agent] Got response ✓")
+            time.sleep(10)
             parsed = parse(response)
             print(f"[Agent] Response type: {parsed['type']}")
 
@@ -96,11 +102,18 @@ Reply GOOD or NEEDS: <reason about relevance/structure only>"""
             if parsed["type"] == "tool_call":
                 tool_name = parsed["tool_name"]
                 tool_args = parsed["tool_args"]
-                print(f"[Agent] Calling tool: {tool_name} with args: {tool_args}")
 
-                tool_func   = self.tools_registry.get(tool_name)
+                # Debugg
+                self.history.add(
+                    f"[Calling tool: {tool_name} with args: {tool_args}]", role="model")
+
+                print(
+                    f"[Agent] Calling tool: {tool_name} with args: {tool_args}")
+
+                tool_func = self.tools_registry.get(tool_name)
                 tool_result = tool_func(**tool_args)
-                print(f"[Agent] Tool result preview: {str(tool_result)[:200]}...")
+                print(
+                    f"[Agent] Tool result preview: {str(tool_result)[:200]}...")
 
                 self.history.add(str(tool_result), role="user")
                 tools_used.append({"tool": tool_name, "args": tool_args})
@@ -113,7 +126,7 @@ Reply GOOD or NEEDS: <reason about relevance/structure only>"""
                     # Lần đầu có text → reflect
                     print(f"[Agent] Running self-reflection...")
                     reflection = self.self_reflect(user_input, answer)
-                    reflected  = True  # ← đánh dấu ngay, không reflect lần 2
+                    reflected = True  # ← đánh dấu ngay, không reflect lần 2
                     print(f"[Agent] Reflection: {reflection}")
 
                     if reflection.startswith("GOOD"):
