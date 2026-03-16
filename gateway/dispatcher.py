@@ -2,6 +2,8 @@ from gateway.models import MsgContext, ReplyPayload
 from gateway import auth, router, session_store
 from agents.orchestration.orchestrator import create_orchestrator
 from agents.core.session import Session
+from gateway.policy.registry import PolicyAwareRegistry
+
 
 
 def handle_command(msg, session_key):
@@ -85,11 +87,20 @@ def dispatchInboundMessage(msg: MsgContext):
             )
 
         return
+    
+    # 7. Inject policy-aware registry
+    policy_registry = PolicyAwareRegistry(
+        registry=_agent.tools_registry,
+        agent_id="orchestrator",
+        channel=msg.channel,
+        session_key=session_key_str
+    )
 
-    # 7. Normal chat → run agent
+    _agent.tools_registry = policy_registry
+    # 8. Normal chat → run agent
     answer = _agent.run(msg.text)
 
-    # 8. Estimate token count
+    # 9. Estimate token count
     total_chars = sum(
         len(str(m["content"]))
         for m in _agent.history.get_history()
@@ -99,7 +110,7 @@ def dispatchInboundMessage(msg: MsgContext):
 
     session_store.update(session_key_str, token_count)
 
-    # 9. Reply to user
+    # 10. Reply to user
     msg.reply_fn(
         ReplyPayload(text=answer)
     )
