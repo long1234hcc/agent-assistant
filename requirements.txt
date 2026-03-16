@@ -12,4 +12,8 @@ python-dotenv
 jinja2
 
 # interact with Todoist API
- todoist-api-python
+todoist-api-python
+
+ ## server 
+fastapi
+uvicorn

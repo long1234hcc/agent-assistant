@@ -17,13 +17,9 @@ class PolicyAwareRegistry:
         self._session_key = session_key
 
     def get(self, tool_name: str) -> Callable:
-        """
-        Trả về wrapped tool function có policy check.
-        """
-
         tool_func = self._registry.get(tool_name)
+
         def wrapped(**tool_args: Any):
-            # 1. Tạo ToolCallRequest
             request = ToolCallRequest(
                 tool_name=tool_name,
                 tool_args=tool_args,
@@ -31,16 +27,14 @@ class PolicyAwareRegistry:
                 channel=self._channel,
                 session_key=self._session_key
             )
-
-            # 2. Chạy policy pipeline
-            decision: PolicyDecision = apply(request)
-
-            # 3. Nếu DENY
+            decision = apply(request)
             if not decision.allowed:
                 return f"[POLICY DENIED][{decision.layer}] {decision.reason}"
-
-            # 4. Nếu ALLOW → chạy tool gốc
             return tool_func(**tool_args)
+
+        # Giữ nguyên tên và metadata của tool gốc
+        wrapped.__name__ = tool_func.__name__
+        wrapped.__doc__ = tool_func.__doc__
 
         return wrapped
 

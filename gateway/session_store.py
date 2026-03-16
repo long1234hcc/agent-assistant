@@ -33,14 +33,18 @@ def create(session_key: str) -> dict:
 
     return entry
 
+def get(session_key: str) -> dict | None:
+    if not os.path.exists(SESSIONS_PATH):
+        return None
+    with open(SESSIONS_PATH, "r") as f:
+        sessions = json.load(f)
+    return sessions.get(session_key)
+
 
 def get_or_create(session_key: str) -> dict:
-
-    session = get(session_key)
-
+    session = get(session_key)      # gọi trực tiếp, không cần import
     if session is None:
         session = create(session_key)
-
     return session
 
 
